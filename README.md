@@ -14,6 +14,19 @@
 
 See [the roadmap](docs/PLAN.md), [safety policy](docs/SAFETY.md), and [recorded evidence](docs/EXPERIMENTS.md).
 
+## Virtual modifier-layer preview (no USB access)
+
+A separate, **hardware-free** prototype now resolves demo shortcut layers and prints the virtual LED frame. It **does not** detect held modifiers or focused applications, and does **not** write RGB commands:
+
+```bash
+python3 -m keycue preview --modifiers SUPER
+python3 -m keycue preview --modifiers SUPER+SHIFT
+python3 -m keycue preview --app ghostty --modifiers CTRL+SHIFT
+python3 -m keycue preview --app zen --modifiers SUPER --format json
+```
+
+Profiles use the validated, versioned TOML schema in [`profiles/demo.toml`](profiles/demo.toml). The demo actions are **placeholders**, not claims about actual Hyprland or application bindings. A manually supplied `--app` chooses an exact app layer when present, with fallback to a global layer. See [virtual layer design](docs/VIRTUAL-LAYERS.md).
+
 ## Usage on tensor
 
 Requires Python 3.11+, Linux `hidraw`, and a **wired USB connection**. Does not require OpenRGB, QMK, hidapi, or other Python packages.

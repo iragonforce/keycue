@@ -57,3 +57,12 @@
   conclusively demonstrate flash or EEPROM persistence.
 - Treat the current effect-area write protocol as potentially
   nonvolatile. Automated and repeated updates remain prohibited.
+
+## 2026-11-23 — virtual shortcut preview implementation (development environment)
+
+- Added a pure, manual modifier/application-layer resolver and versioned example TOML profile.
+- All actions in the demo are fabricated placeholders, not sourced from actual host or app bindings.
+- Added CLI `preview` for text/JSON virtual LED frames, without HID discovery or writes.
+- Existing 22-write HID transaction remains unchanged.
+- Offline automated tests extended to cover exact modifier matching, app fallback, invalid profiles, mapped LED positions, JSON, and absence of USB access.
+- **No physical keyboard or Hyprland integration was tested in this development environment**; validation on `tensor` remains pending.
