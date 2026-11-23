@@ -45,3 +45,15 @@
 - Found no authoritative evidence that the legacy `0x13` configuration writes are nonpersistent, and no verified K2 V2 RAM-only streaming transfer sequence. See `PROTOCOL.md` for sources and remaining gaps.
 - Implemented an **offline** `analyze` command and optional per-transfer timing instrumentation for an explicitly approved one-shot hardware write; the transaction, pacing and number of HID calls are unchanged.
 - In an isolated Linux environment with fake/mock HID calls, 19/19 unit tests passed. The user has not run this updated implementation on `tensor` yet. No keyboard access occurred in this stage.
+
+
+## 2026-11-23 — USB disconnect persistence observation
+
+- The user confirmed that the white V/T/F custom lighting pattern
+  survived unplugging the keyboard.
+- No additional HID writes were required to restore the pattern.
+- Exact power-isolation conditions were not independently verified.
+- Because the keyboard contains an internal battery, this does not
+  conclusively demonstrate flash or EEPROM persistence.
+- Treat the current effect-area write protocol as potentially
+  nonvolatile. Automated and repeated updates remain prohibited.
