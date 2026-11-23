@@ -21,13 +21,14 @@ Make keyboard LEDs serve as a **contextual shortcut guide**. Example: holding Su
 | P1.2 | Test packaged CLI on K2 | Exactly correct pattern; input still works; document latency | **Pending** |
 | P1.3 | Nonvolatile persistence analysis | Evidence-based determination of write endurance / memory effects | **Research in progress; still unverified and blocking loops** |
 | P1.4 | Low-latency safe update transport | Nonpersistent update, repeatably <50 ms end-to-end if hardware permits | **Pending research** |
+| P2-prep | Hardware-free layer resolver | Manual Super / Super+Shift / app preview; JSON virtual frames | **Implemented offline; no live input** |
 | P2.0 | Hyprland layer resolver | Super/Super+Shift map without altering existing binds | **Pending P1.4** |
 | P2.1 | Focused app layers | Zen Browser, FreeCAD, Ghostty, Neovim, tmux | **Pending P2.0** |
 | P3.0 | Secondary display overlay | Show current key labels and actions on secondary monitor | **Pending P2.0** |
 
 ### Immediate next action
 
-Review and merge the P1.3 offline diagnostics branch, pull to `tensor`, and run `python3 -m unittest discover -s tests -v` followed by `python3 -m keycue analyze`. Both operations are software-only; they must not send USB HID commands. Continue firmware persistence research before scheduling or looping writes. A physical `--apply` test is not needed for this validation.
+Review and merge the hardware-free virtual layers prototype; run `python3 -m unittest discover -s tests -v` and manual previews of Super / Super+Shift / app contexts on `tensor`. Confirm these operate without USB access. In parallel, continue read-only research into K2 persistence and a nonvolatile-safe update protocol before wiring live keyboard events to lighting.
 
 ### P1.3 evidence plan (read-only first)
 

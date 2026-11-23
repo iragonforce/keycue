@@ -1,12 +1,15 @@
 """CLI for one-shot Keychron K2 RGB pattern tests."""
 from __future__ import annotations
 import argparse
+import json
 import sys
+from pathlib import Path
 from collections.abc import Mapping
 from .device import choose_device, discover, execute
 from .keymap import KEY_INDICES, normalize_key, packet_position
 from .protocol import build_transaction
 from .diagnostics import describe_step, render_report
+from .layers import load_profile, parse_modifiers, modifiers_label
 
 PALETTE: dict[str, tuple[int, int, int]] = {
     'white':(255,255,255), 'black':(0,0,0),
@@ -70,6 +73,13 @@ def make_parser() -> argparse.ArgumentParser:
     subs.add_parser('identify', help='List candidate USB HID interfaces; never writes')
     subs.add_parser('keys', help='List known key names and packet positions; never writes')
     subs.add_parser('analyze', help='Describe the proven transaction offline; never opens USB')
+    preview = subs.add_parser('preview', help='Simulate shortcut lighting from TOML; never opens USB')
+    preview.add_argument('--profile', type=Path, default=Path(__file__).resolve().parent.parent / 'profiles/demo.toml',
+                         help='Shortcut layer TOML file (default: bundled demo)')
+    preview.add_argument('--modifiers', default='', help='e.g. SUPER or SUPER+SHIFT; blank means none')
+    preview.add_argument('--app', help='Optional manually supplied app label, e.g. ghostty')
+    preview.add_argument('--format', choices=('text', 'json'), default='text',
+                         help='Text legend or machine-readable virtual frame')
     sc = subs.add_parser('set', help='All black except specified keys')
     sc.add_argument('--keys', help='Comma-separated names, e.g. V,T,F')
     sc.add_argument('--color', help='Named colour or #RRGGBB, default white')
@@ -134,6 +144,20 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command == 'analyze':
             print(render_report(build_transaction({'V': (255,255,255), 'T': (255,255,255), 'F': (255,255,255)})))
+            return 0
+        if args.command == 'preview':
+            profile = load_profile(args.profile)
+            frame = profile.resolve(parse_modifiers(args.modifiers), args.app)
+            if args.format == 'json':
+                print(json.dumps(frame.to_dict(), indent=2))
+            else:
+                print('=== KEYCUE VIRTUAL SHORTCUT PREVIEW ===')
+                print('DEMO/FILE-DEFINED ACTIONS ONLY. No USB access or HID commands.')
+                print(f'Context: {frame.requested_scope}; modifiers: {modifiers_label(frame.modifiers)}')
+                print(f'Matched layer: {frame.matched_scope or "none"}')
+                print(f'Illuminated: {len(frame.keys)} / 84; all other LEDs: black (virtual)')
+                for key, cue in sorted(frame.keys.items()):
+                    print(f'  {key:11s} {cue.hex_colour}  {cue.action}')
             return 0
         if args.command == 'keys':
             for key in sorted(KEY_INDICES):

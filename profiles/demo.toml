@@ -1,0 +1,25 @@
+# VIRTUAL-ONLY DEMONSTRATION, NOT VERIFIED HYPRLAND/APPLICATION SHORTCUTS.
+# No LED writes or current-application detection. Action strings are placeholders.
+version = 1
+
+[[layers]]
+scope = "global"
+modifiers = ["SUPER"]
+[layers.keys]
+V = { color = "#FFFFFF", action = "Demo: V shortcut" }
+T = { color = "#FFFFFF", action = "Demo: T shortcut" }
+F = { color = "#FFFFFF", action = "Demo: F shortcut" }
+
+[[layers]]
+scope = "global"
+modifiers = ["SUPER", "SHIFT"]
+[layers.keys]
+R = { color = "#0088FF", action = "Demo: R with Super+Shift" }
+M = { color = "#0088FF", action = "Demo: M with Super+Shift" }
+P = { color = "#0088FF", action = "Demo: P with Super+Shift" }
+
+[[layers]]
+scope = "app:ghostty"
+modifiers = ["CTRL", "SHIFT"]
+[layers.keys]
+T = { color = "#FFAA00", action = "Demo: Ghostty-specific shortcut" }
