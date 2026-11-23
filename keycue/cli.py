@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from .device import choose_device, discover, execute
 from .keymap import KEY_INDICES, normalize_key, packet_position
 from .protocol import build_transaction
+from .diagnostics import describe_step, render_report
 
 PALETTE: dict[str, tuple[int, int, int]] = {
     'white':(255,255,255), 'black':(0,0,0),
@@ -57,6 +58,8 @@ def build_key_colours(keys: str | None, color: str | None, paints: list[str]) ->
 
 def _add_write_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument('--apply', action='store_true', help='Write to keyboard; default is a dry run')
+    parser.add_argument('--trace-timing', action='store_true',
+                        help='With --apply only: time existing HID calls; no extra USB commands')
     parser.add_argument('--acknowledge-persistence-risk', action='store_true',
                         help='Required with --apply: effect updates may write firmware flash')
 
@@ -66,6 +69,7 @@ def make_parser() -> argparse.ArgumentParser:
     subs = parser.add_subparsers(dest='command', required=True)
     subs.add_parser('identify', help='List candidate USB HID interfaces; never writes')
     subs.add_parser('keys', help='List known key names and packet positions; never writes')
+    subs.add_parser('analyze', help='Describe the proven transaction offline; never opens USB')
     sc = subs.add_parser('set', help='All black except specified keys')
     sc.add_argument('--keys', help='Comma-separated names, e.g. V,T,F')
     sc.add_argument('--color', help='Named colour or #RRGGBB, default white')
@@ -76,9 +80,12 @@ def make_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _write_pattern(colours: Mapping[str, tuple[int,int,int]], apply: bool, acknowledge: bool) -> int:
+def _write_pattern(colours: Mapping[str, tuple[int,int,int]], apply: bool, acknowledge: bool,
+                   trace_timing: bool = False) -> int:
     if acknowledge and not apply:
         raise ValueError('--acknowledge-persistence-risk requires --apply')
+    if trace_timing and not apply:
+        raise ValueError('--trace-timing requires --apply')
     actions = build_transaction(colours)
     print('=== KEYCUE PHASE-1 MANUAL TEST ===')
     print(f'Illuminated keys: {len(colours)} / 84; all others: black')
@@ -94,8 +101,21 @@ def _write_pattern(colours: Mapping[str, tuple[int,int,int]], apply: bool, ackno
         raise ValueError('Refusing hardware write: review docs/SAFETY.md and add --acknowledge-persistence-risk')
     node = choose_device(discover())
     print(f'Device: {node}', flush=True)
-    writes, elapsed = execute(node, actions)
+    timings = [] if trace_timing else None
+    if timings is None:
+        writes, elapsed = execute(node, actions)
+    else:
+        writes, elapsed = execute(node, actions, timings=timings)
     print(f'Sent {writes} HID writes in {elapsed:.1f} ms')
+    if timings is not None:
+        print('=== PER-TRANSFER TIMING (NO ADDITIONAL USB COMMANDS) ===')
+        for sample in timings:
+            print(f'{sample.index + 1:2d}. {sample.operation:5s} '
+                  f'ioctl={sample.ioctl_ms:7.2f}ms '
+                  f'pace={sample.pacing_ms:6.2f}ms '
+                  f'{describe_step(sample.index, actions[sample.index])}')
+        print(f'Total ioctl: {sum(x.ioctl_ms for x in timings):.2f} ms; '
+              f'total pacing: {sum(x.pacing_ms for x in timings):.2f} ms')
     print('Verify LEDs visually and check typing. HID success alone does not verify physical behaviour.')
     return 0
 
@@ -112,15 +132,18 @@ def main(argv: list[str] | None = None) -> int:
                 print(f'{c.device}: {c.physical_path}; read={c.readable}; write={c.writable}')
             print('VID:PID is shared by models; this does not independently confirm hardware revision.')
             return 0
+        if args.command == 'analyze':
+            print(render_report(build_transaction({'V': (255,255,255), 'T': (255,255,255), 'F': (255,255,255)})))
+            return 0
         if args.command == 'keys':
             for key in sorted(KEY_INDICES):
                 print(f'{key:12s} LED index {KEY_INDICES[key]:2d}  packet position {packet_position(key):3d}')
             return 0
         if args.command == 'off':
-            return _write_pattern({}, args.apply, args.acknowledge_persistence_risk)
+            return _write_pattern({}, args.apply, args.acknowledge_persistence_risk, args.trace_timing)
         if args.command == 'set':
             return _write_pattern(build_key_colours(args.keys, args.color, args.paint),
-                                  args.apply, args.acknowledge_persistence_risk)
+                                  args.apply, args.acknowledge_persistence_risk, args.trace_timing)
         raise RuntimeError(f'Unhandled command {args.command!r}')
     except (ValueError, RuntimeError, PermissionError, OSError) as exc:
         print(f'ERROR: {exc}', file=sys.stderr)

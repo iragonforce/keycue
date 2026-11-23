@@ -32,3 +32,16 @@
 - Added a pure-Python port of the verified 22-write feature-report sequence, packaged as a manual CLI.
 - Tests compare report counts, command order, V/T/F indices, all-black background, and default dry-run safety.
 - **Software-only verification**; the repository implementation has **not been executed on the physical K2**.
+
+## 2026-11-23 — tensor repository validation (user-reported)
+
+- User ran the packaged code on `tensor`, branch `main`: 14/14 unit tests passed, `identify` selected `/dev/hidraw1` with read and write access, and the V/T/F CLI dry-run showed positions `70,39,54`, 22 writes, 3 reads.
+- No physical `keycue --apply` test was reported; earlier V/T/F visual verification remains specific to the historical one-shot script.
+- User published `iragonforce/keycue` on GitHub; visibility changed to public.
+
+## 2026-11-23 — P1.3 source review + offline instrumentation (development environment)
+
+- Inspected the actual `keycue` baseline at GitHub `main` commit `d0b24d1` and reviewed the K2-specific Artemis and OpenRGB controllers.
+- Found no authoritative evidence that the legacy `0x13` configuration writes are nonpersistent, and no verified K2 V2 RAM-only streaming transfer sequence. See `PROTOCOL.md` for sources and remaining gaps.
+- Implemented an **offline** `analyze` command and optional per-transfer timing instrumentation for an explicitly approved one-shot hardware write; the transaction, pacing and number of HID calls are unchanged.
+- In an isolated Linux environment with fake/mock HID calls, 19/19 unit tests passed. The user has not run this updated implementation on `tensor` yet. No keyboard access occurred in this stage.
