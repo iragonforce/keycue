@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "keycue"
+version = "0.1.0"
+description = "Direct USB HID shortcut-lighting experiments for the legacy Keychron K2"
+requires-python = ">=3.11"
+license = "GPL-2.0-or-later"
+authors = [{name = "iragonforce"}]
+classifiers = ["Programming Language :: Python :: 3", "Operating System :: POSIX :: Linux"]
+
+[project.scripts]
+keycue = "keycue.cli:main"
+
+[tool.setuptools]
+packages = ["keycue"]
