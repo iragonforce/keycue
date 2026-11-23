@@ -23,6 +23,7 @@ From the repository root (no installation necessary):
 ```bash
 python3 -m unittest discover -s tests -v
 python3 -m keycue identify
+python3 -m keycue analyze  # offline protocol report, no USB access
 python3 -m keycue keys
 python3 -m keycue set --keys V,T,F --color white
 python3 -m keycue set --paint 'V,T,F=#FFFFFF' --paint 'R,M,P=#0000FF'
@@ -45,6 +46,12 @@ Optionally, if you want all keys dark, use `off` with the same two explicit flag
 ### Example key names
 
 `V`, `T`, `F`, `LSUPER`, `LSHIFT`, `ESC`, `F1`–`F12`, `SPACE`, `ENTER`, `LEFT`, `UP`, `RIGHT`, `DOWN`, `PGUP`, `PGDN`. See `python3 -m keycue keys` for all 84 logical positions. Other physical key mappings are based on the legacy K2 driver and need visual confirmation.
+
+### Transfer diagnostics (safe offline mode)
+
+`python3 -m keycue analyze` prints the 25-step feature-report transaction, the exact number of writes and reads, and the minimum requested pacing time. It **does not access the keyboard**.
+
+A `--trace-timing` flag is available with an explicitly approved single `--apply` operation to show the ioctl and pacing duration of each *existing* operation. It does not change the HID command sequence or add extra transfers, but **it does not remove persistence risk** and is not a reason to repeat hardware experiments. No loops, daemon or automatic updates are enabled.
 
 ### Current limitations
 

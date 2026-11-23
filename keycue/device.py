@@ -19,6 +19,14 @@ HIDIOCSFEATURE = _hid_ioctl(3, 0x06, FEATURE_REPORT_SIZE)
 HIDIOCGFEATURE = _hid_ioctl(3, 0x07, FEATURE_REPORT_SIZE)
 
 @dataclass(frozen=True)
+class TransferTiming:
+    index: int
+    operation: str
+    ioctl_ms: float
+    pacing_ms: float
+
+
+@dataclass(frozen=True)
 class Candidate:
     device: Path
     physical_path: str
@@ -56,13 +64,15 @@ def choose_device(devices: Sequence[Candidate]) -> Path:
     return devices[0].device
 
 
-def execute(device: Path, actions: Sequence[Transfer], pacing_s: float = 0.001) -> tuple[int, float]:
+def execute(device: Path, actions: Sequence[Transfer], pacing_s: float = 0.001,
+            timings: list[TransferTiming] | None = None) -> tuple[int, float]:
     """Perform a single transaction: no polling, retries, or background writes."""
     start = time.perf_counter()
     writes = 0
     fd = os.open(device, os.O_RDWR | os.O_CLOEXEC)
     try:
-        for item in actions:
+        for index, item in enumerate(actions):
+            io_start = time.perf_counter()
             if item.operation == 'write':
                 if len(item.data) != FEATURE_DATA_SIZE:
                     raise ValueError('Expected exactly 64 feature data bytes')
@@ -74,7 +84,12 @@ def execute(device: Path, actions: Sequence[Transfer], pacing_s: float = 0.001) 
                 fcntl.ioctl(fd, HIDIOCGFEATURE, report, True)
             else:
                 raise ValueError(f'Unknown transfer operation {item.operation!r}')
+            ioctl_finished = time.perf_counter()
             time.sleep(pacing_s)
+            if timings is not None:
+                timings.append(TransferTiming(index, item.operation,
+                                              (ioctl_finished - io_start) * 1000,
+                                              (time.perf_counter() - ioctl_finished) * 1000))
     finally:
         os.close(fd)
     return writes, (time.perf_counter() - start) * 1000
